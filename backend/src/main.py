@@ -11,6 +11,10 @@ from src.routes.tools import tools_bp
 from src.routes.categories import categories_bp
 from src.routes.bookings import bookings_bp
 from src.routes.reviews import reviews_bp
+from src.routes.messages import messages_bp
+from src.routes.notifications import notifications_bp
+from src.routes.analytics import analytics_bp
+from src.routes.dashboard import dashboard_bp
 
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
 app.config['SECRET_KEY'] = 'asdf#FGSgvasgf$5$WGT'
@@ -24,6 +28,10 @@ app.register_blueprint(tools_bp, url_prefix='/api/tools')
 app.register_blueprint(categories_bp, url_prefix='/api/categories')
 app.register_blueprint(bookings_bp, url_prefix='/api/bookings')
 app.register_blueprint(reviews_bp, url_prefix='/api/reviews')
+app.register_blueprint(messages_bp, url_prefix='/api/messages')
+app.register_blueprint(notifications_bp, url_prefix='/api/notifications')
+app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
+app.register_blueprint(dashboard_bp, url_prefix='/api/dashboard')
 
 # Database configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(os.path.dirname(__file__), 'database', 'app.db')}"
@@ -56,4 +64,3 @@ def health_check():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
-

@@ -6,8 +6,10 @@ import {
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
-  DropdownMenuTrigger 
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
+import { NotificationCenter } from './NotificationCenter';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   Search, 
@@ -17,7 +19,10 @@ import {
   Plus, 
   Calendar,
   Menu,
-  X
+  X,
+  MessageCircle,
+  BarChart3,
+  Package
 } from 'lucide-react';
 
 export const Navbar = () => {
@@ -81,6 +86,8 @@ export const Navbar = () => {
                     <span>List Tool</span>
                   </Button>
                 </Link>
+
+                <NotificationCenter />
                 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -89,7 +96,7 @@ export const Navbar = () => {
                       <span>{user.username}</span>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuItem onClick={() => navigate('/dashboard')}>
                       <Settings className="w-4 h-4 mr-2" />
                       Dashboard
@@ -98,6 +105,15 @@ export const Navbar = () => {
                       <Calendar className="w-4 h-4 mr-2" />
                       My Bookings
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/messages')}>
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      Messages
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/analytics')}>
+                      <BarChart3 className="w-4 h-4 mr-2" />
+                      Analytics
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => navigate('/profile')}>
                       <User className="w-4 h-4 mr-2" />
                       Profile
@@ -178,6 +194,18 @@ export const Navbar = () => {
                       My Bookings
                     </Button>
                   </Link>
+                  <Link to="/messages" className="block">
+                    <Button variant="ghost" className="w-full justify-start">
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      Messages
+                    </Button>
+                  </Link>
+                  <Link to="/analytics" className="block">
+                    <Button variant="ghost" className="w-full justify-start">
+                      <BarChart3 className="w-4 h-4 mr-2" />
+                      Analytics
+                    </Button>
+                  </Link>
                   <Link to="/profile" className="block">
                     <Button variant="ghost" className="w-full justify-start">
                       <User className="w-4 h-4 mr-2" />
@@ -214,4 +242,3 @@ export const Navbar = () => {
     </nav>
   );
 };
-

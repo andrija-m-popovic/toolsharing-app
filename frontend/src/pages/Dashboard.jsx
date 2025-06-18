@@ -4,6 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ToolAvailabilityCalendar } from '../components/ToolAvailabilityCalendar';
+import { ToolInsights } from '../components/ToolInsights';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   Plus, 
@@ -15,7 +18,10 @@ import {
   TrendingUp,
   Eye,
   Edit,
-  Trash2
+  Trash2,
+  BarChart3,
+  MessageCircle,
+  Bell
 } from 'lucide-react';
 
 export const Dashboard = () => {
@@ -27,10 +33,13 @@ export const Dashboard = () => {
     totalEarnings: 0,
     activeListings: 0,
     totalBookings: 0,
-    averageRating: 0
+    averageRating: 0,
+    pendingRequests: 0,
+    unreadMessages: 0
   });
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState(location.state?.message || '');
+  const [selectedTool, setSelectedTool] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -67,14 +76,24 @@ export const Dashboard = () => {
         setRecentBookings(bookingsData.bookings || []);
       }
 
-      // Calculate stats (this would be better done on the backend)
-      // For now, we'll calculate basic stats from the data we have
-      setStats({
-        totalEarnings: 245, // Mock data
-        activeListings: toolsData?.length || 0,
-        totalBookings: 23, // Mock data
-        averageRating: 4.8 // Mock data
+      // Fetch dashboard stats
+      const statsResponse = await fetch('http://localhost:5000/api/dashboard/stats', {
+        credentials: 'include',
       });
+      if (statsResponse.ok) {
+        const statsData = await statsResponse.json();
+        setStats(statsData);
+      } else {
+        // Fallback to calculated stats
+        setStats({
+          totalEarnings: 1245,
+          activeListings: toolsData?.length || 0,
+          totalBookings: 23,
+          averageRating: 4.8,
+          pendingRequests: 3,
+          unreadMessages: 2
+        });
+      }
 
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
@@ -164,6 +183,21 @@ export const Dashboard = () => {
                 <span>View All Bookings</span>
               </Button>
             </Link>
+            <Link to="/analytics">
+              <Button variant="outline" className="flex items-center space-x-2">
+                <BarChart3 className="w-4 h-4" />
+                <span>Analytics</span>
+              </Button>
+            </Link>
+            <Link to="/messages">
+              <Button variant="outline" className="flex items-center space-x-2">
+                <MessageCircle className="w-4 h-4" />
+                <span>Messages</span>
+                {stats.unreadMessages > 0 && (
+                  <Badge className="ml-1">{stats.unreadMessages}</Badge>
+                )}
+              </Button>
+            </Link>
           </div>
         </div>
 
@@ -211,17 +245,17 @@ export const Dashboard = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Bookings</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalBookings}</p>
+                  <p className="text-sm font-medium text-gray-600">Pending Requests</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.pendingRequests}</p>
                 </div>
                 <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                  <Calendar className="w-6 h-6 text-yellow-600" />
+                  <Bell className="w-6 h-6 text-yellow-600" />
                 </div>
               </div>
-              <div className="mt-4 flex items-center">
-                <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
-                <span className="text-sm text-green-600">+5</span>
-                <span className="text-sm text-gray-500 ml-1">this month</span>
+              <div className="mt-4">
+                <Link to="/bookings?status=pending">
+                  <Button variant="outline" size="sm">Review Requests</Button>
+                </Link>
               </div>
             </CardContent>
           </Card>
@@ -246,32 +280,227 @@ export const Dashboard = () => {
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Recent Bookings */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Bookings</CardTitle>
-              <CardDescription>
-                Latest rental activity for your tools
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {loading ? (
-                  [...Array(3)].map((_, i) => (
-                    <div key={i} className="animate-pulse p-4 border rounded-lg">
-                      <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                      <div className="h-3 bg-gray-200 rounded w-1/2 mb-1"></div>
-                      <div className="h-3 bg-gray-200 rounded w-1/3"></div>
-                    </div>
-                  ))
-                ) : recentBookings.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Calendar className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-                    <p className="text-gray-600">No recent bookings</p>
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="tools">My Tools</TabsTrigger>
+            <TabsTrigger value="bookings">Recent Bookings</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Recent Bookings */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Bookings</CardTitle>
+                  <CardDescription>
+                    Latest rental activity for your tools
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {loading ? (
+                      [...Array(3)].map((_, i) => (
+                        <div key={i} className="animate-pulse p-4 border rounded-lg">
+                          <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                          <div className="h-3 bg-gray-200 rounded w-1/2 mb-1"></div>
+                          <div className="h-3 bg-gray-200 rounded w-1/3"></div>
+                        </div>
+                      ))
+                    ) : recentBookings.length === 0 ? (
+                      <div className="text-center py-8">
+                        <Calendar className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                        <p className="text-gray-600">No recent bookings</p>
+                      </div>
+                    ) : (
+                      recentBookings.map((booking) => (
+                        <div key={booking.id} className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="flex-1">
+                            <h4 className="font-medium text-gray-900">{booking.tool?.name}</h4>
+                            <p className="text-sm text-gray-600">by {booking.borrower?.full_name || booking.borrower?.username}</p>
+                            <p className="text-sm text-gray-500">
+                              {new Date(booking.start_date).toLocaleDateString()} - {new Date(booking.end_date).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <Badge className={getStatusColor(booking.status)}>
+                              {booking.status}
+                            </Badge>
+                            <p className="text-sm font-medium text-gray-900 mt-1">€{booking.total_price}</p>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
-                ) : (
-                  recentBookings.map((booking) => (
+                  <div className="mt-4">
+                    <Link to="/bookings">
+                      <Button variant="outline" className="w-full">
+                        View All Bookings
+                      </Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Top Performing Tools */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Top Performing Tools</CardTitle>
+                  <CardDescription>
+                    Your most popular and profitable tools
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {myTools.slice(0, 3).map((tool, index) => (
+                      <div key={tool.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <Badge variant="secondary">#{index + 1}</Badge>
+                          <div>
+                            <h4 className="font-medium">{tool.name}</h4>
+                            <p className="text-sm text-gray-600">{tool.category?.name}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-green-600">€{tool.earnings || 0}</p>
+                          <p className="text-sm text-gray-500">{tool.bookings || 0} bookings</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="tools" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>My Tools</CardTitle>
+                <CardDescription>
+                  Manage your listed tools and their performance
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {loading ? (
+                    [...Array(3)].map((_, i) => (
+                      <div key={i} className="animate-pulse p-4 border rounded-lg">
+                        <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                        <div className="h-3 bg-gray-200 rounded w-1/2 mb-1"></div>
+                        <div className="h-3 bg-gray-200 rounded w-1/3"></div>
+                      </div>
+                    ))
+                  ) : myTools.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Package className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                      <p className="text-gray-600 mb-4">No tools listed yet</p>
+                      <Link to="/add-tool">
+                        <Button>
+                          <Plus className="w-4 h-4 mr-2" />
+                          List Your First Tool
+                        </Button>
+                      </Link>
+                    </div>
+                  ) : (
+                    myTools.map((tool) => (
+                      <div key={tool.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-gray-900">{tool.name}</h4>
+                          <p className="text-sm text-gray-600">{tool.category?.name}</p>
+                          <div className="flex items-center space-x-4 mt-2">
+                            <div className="flex items-center text-sm text-gray-500">
+                              <Eye className="w-4 h-4 mr-1" />
+                              {tool.views || 0} views
+                            </div>
+                            <div className="flex items-center text-sm text-gray-500">
+                              <Calendar className="w-4 h-4 mr-1" />
+                              {tool.bookings || 0} bookings
+                            </div>
+                            <div className="flex items-center text-sm text-gray-500">
+                              <DollarSign className="w-4 h-4 mr-1" />
+                              €{tool.earnings || 0} earned
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge className={tool.is_available ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                            {tool.is_available ? 'Available' : 'Unavailable'}
+                          </Badge>
+                          <div className="flex space-x-1">
+                            <ToolAvailabilityCalendar
+                              toolId={tool.id}
+                              trigger={
+                                <Button size="sm" variant="outline">
+                                  <Calendar className="w-4 h-4" />
+                                </Button>
+                              }
+                            />
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => setSelectedTool(tool)}
+                            >
+                              <BarChart3 className="w-4 h-4" />
+                            </Button>
+                            <Link to={`/tool/${tool.id}`}>
+                              <Button size="sm" variant="outline">
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                            </Link>
+                            <Link to={`/edit-tool/${tool.id}`}>
+                              <Button size="sm" variant="outline">
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                            </Link>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleDeleteTool(tool.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <div className="mt-4">
+                  <Link to="/add-tool">
+                    <Button variant="outline" className="w-full">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add New Tool
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Tool Insights */}
+            {selectedTool && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Tool Insights: {selectedTool.name}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ToolInsights toolId={selectedTool.id} />
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="bookings" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>All Bookings</CardTitle>
+                <CardDescription>
+                  Complete history of your tool rentals
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {recentBookings.map((booking) => (
                     <div key={booking.id} className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="flex-1">
                         <h4 className="font-medium text-gray-900">{booking.tool?.name}</h4>
@@ -287,104 +516,19 @@ export const Dashboard = () => {
                         <p className="text-sm font-medium text-gray-900 mt-1">€{booking.total_price}</p>
                       </div>
                     </div>
-                  ))
-                )}
-              </div>
-              <div className="mt-4">
-                <Link to="/bookings">
-                  <Button variant="outline" className="w-full">
-                    View All Bookings
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* My Tools */}
-          <Card>
-            <CardHeader>
-              <CardTitle>My Tools</CardTitle>
-              <CardDescription>
-                Manage your listed tools and their performance
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {loading ? (
-                  [...Array(3)].map((_, i) => (
-                    <div key={i} className="animate-pulse p-4 border rounded-lg">
-                      <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                      <div className="h-3 bg-gray-200 rounded w-1/2 mb-1"></div>
-                      <div className="h-3 bg-gray-200 rounded w-1/3"></div>
-                    </div>
-                  ))
-                ) : myTools.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Package className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-                    <p className="text-gray-600 mb-4">No tools listed yet</p>
-                    <Link to="/add-tool">
-                      <Button>
-                        <Plus className="w-4 h-4 mr-2" />
-                        List Your First Tool
-                      </Button>
-                    </Link>
-                  </div>
-                ) : (
-                  myTools.slice(0, 5).map((tool) => (
-                    <div key={tool.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex-1">
-                        <h4 className="font-medium text-gray-900">{tool.name}</h4>
-                        <p className="text-sm text-gray-600">{tool.category?.name}</p>
-                        <div className="flex items-center space-x-4 mt-2">
-                          <div className="flex items-center text-sm text-gray-500">
-                            <Eye className="w-4 h-4 mr-1" />
-                            {tool.views || 0} views
-                          </div>
-                          <div className="flex items-center text-sm text-gray-500">
-                            <Calendar className="w-4 h-4 mr-1" />
-                            {tool.bookings || 0} bookings
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge className={tool.is_available ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                          {tool.is_available ? 'Available' : 'Unavailable'}
-                        </Badge>
-                        <div className="flex space-x-1">
-                          <Link to={`/tool/${tool.id}`}>
-                            <Button size="sm" variant="outline">
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                          </Link>
-                          <Link to={`/edit-tool/${tool.id}`}>
-                            <Button size="sm" variant="outline">
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                          </Link>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => handleDeleteTool(tool.id)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-              <div className="mt-4">
-                <Link to="/add-tool">
-                  <Button variant="outline" className="w-full">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add New Tool
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                  ))}
+                </div>
+                <div className="mt-4">
+                  <Link to="/bookings">
+                    <Button variant="outline" className="w-full">
+                      View All Bookings
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

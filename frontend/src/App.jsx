@@ -11,6 +11,8 @@ import { Dashboard } from './pages/Dashboard';
 import { AddTool } from './pages/AddTool';
 import { Profile } from './pages/Profile';
 import { Bookings } from './pages/Bookings';
+import { Messages } from './pages/Messages';
+import { Analytics } from './pages/Analytics';
 import { AuthProvider } from './contexts/AuthContext';
 import './App.css';
 
@@ -31,6 +33,8 @@ function App() {
               <Route path="/add-tool" element={<AddTool />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/bookings" element={<Bookings />} />
+              <Route path="/messages" element={<Messages />} />
+              <Route path="/analytics" element={<Analytics />} />
             </Routes>
           </main>
           <Footer />
