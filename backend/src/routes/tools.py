@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, session
-from src.models.user import db, Tool, Category, ToolImage, User
+from src.models.user import db, Tool, Category, ToolImage, User, Booking
 from datetime import datetime
 from sqlalchemy import or_, and_
 
@@ -203,3 +203,82 @@ def get_my_tools():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@tools_bp.route('/<int:tool_id>/bookings', methods=['GET'])
+def get_tool_bookings(tool_id):
+    try:
+        user_id = session.get('user_id')
+        if not user_id:
+            return jsonify({'error': 'Not authenticated'}), 401
+        
+        tool = Tool.query.get(tool_id)
+        if not tool:
+            return jsonify({'error': 'Tool not found'}), 404
+        
+        if tool.owner_id != user_id:
+            return jsonify({'error': 'Not authorized to view these bookings'}), 403
+        
+        bookings = Booking.query.filter_by(tool_id=tool_id).order_by(Booking.start_date.asc()).all()
+        
+        return jsonify({
+            'bookings': [booking.to_dict() for booking in bookings]
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@tools_bp.route('/<int:tool_id>/insights', methods=['GET'])
+def get_tool_insights(tool_id):
+    try:
+        user_id = session.get('user_id')
+        if not user_id:
+            return jsonify({'error': 'Not authenticated'}), 401
+        
+        tool = Tool.query.get(tool_id)
+        if not tool:
+            return jsonify({'error': 'Tool not found'}), 404
+        
+        if tool.owner_id != user_id:
+            return jsonify({'error': 'Not authorized to view these insights'}), 403
+        
+        # Get bookings for this tool
+        bookings = Booking.query.filter_by(tool_id=tool_id).all()
+        completed_bookings = [b for b in bookings if b.status == 'completed']
+        
+        # Calculate insights
+        total_earnings = sum(booking.total_price for booking in completed_bookings)
+        total_bookings = len(bookings)
+        
+        # Get reviews for rating
+        from src.models.user import Review
+        reviews = Review.query.filter_by(tool_id=tool_id, review_type='tool_review').all()
+        avg_rating = sum(r.rating for r in reviews) / len(reviews) if reviews else 0
+        
+        # Mock competitor analysis (in real app, this would query similar tools)
+        competitor_analysis = [
+            {
+                'name': 'Similar Tool 1',
+                'category': tool.category.name if tool.category else 'Unknown',
+                'price': tool.price_per_day * 0.9,
+                'rating': 4.2
+            },
+            {
+                'name': 'Similar Tool 2', 
+                'category': tool.category.name if tool.category else 'Unknown',
+                'price': tool.price_per_day * 1.1,
+                'rating': 4.6
+            }
+        ]
+        
+        return jsonify({
+            'views': 156,  # Mock data
+            'bookings': total_bookings,
+            'earnings': total_earnings,
+            'rating': avg_rating,
+            'reviews': len(reviews),
+            'viewsHistory': [],
+            'bookingHistory': [],
+            'competitorAnalysis': competitor_analysis
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

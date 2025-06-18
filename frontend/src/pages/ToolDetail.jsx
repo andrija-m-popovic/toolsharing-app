@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { BookingModal } from '../components/BookingModal';
+import { MessageCenter } from '../components/MessageCenter';
 import { useAuth } from '../contexts/AuthContext';
 import { Star, MapPin, Calendar, Shield, User, ArrowLeft, MessageCircle } from 'lucide-react';
 
@@ -232,11 +233,17 @@ export const ToolDetail = () => {
                 </Button>
               )}
               
-              {!isOwner && (
-                <Button variant="outline" className="w-full">
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Contact Owner
-                </Button>
+              {!isOwner && user && (
+                <MessageCenter
+                  bookingId={null}
+                  otherUser={tool.owner}
+                  trigger={
+                    <Button variant="outline" className="w-full">
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      Contact Owner
+                    </Button>
+                  }
+                />
               )}
             </div>
           </div>

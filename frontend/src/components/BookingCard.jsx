@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { MessageCenter } from './MessageCenter';
 import { Calendar, MapPin, MessageCircle, Star, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -168,15 +169,16 @@ export const BookingCard = ({ booking, userRole, onStatusUpdate, onMessage, onRe
         </div>
 
         <div className="flex gap-2">
-          <Button 
-            size="sm" 
-            variant="outline" 
-            onClick={() => onMessage(booking)}
-            className="flex-1"
-          >
-            <MessageCircle className="w-4 h-4 mr-1" />
-            Message
-          </Button>
+          <MessageCenter
+            bookingId={booking.id}
+            otherUser={otherUser}
+            trigger={
+              <Button size="sm" variant="outline" className="flex-1">
+                <MessageCircle className="w-4 h-4 mr-1" />
+                Message
+              </Button>
+            }
+          />
           {getStatusActions() && (
             <div className="flex-1">
               {getStatusActions()}
